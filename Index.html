@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SwiftCredit — Digital Micro-Lending Prototype</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f5f2;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-2: #555;
+    --ink-3: #8a8a85;
+    --line: rgba(0,0,0,0.08);
+    --line-2: rgba(0,0,0,0.15);
+    --accent: #0f6e56;
+    --accent-fill: #e1f5ee;
+    --accent-ink: #04342c;
+    --warn: #ba7517;
+    --warn-fill: #faeeda;
+    --warn-ink: #633806;
+    --danger: #a32d2d;
+    --danger-fill: #fcebeb;
+    --danger-ink: #501313;
+    --info: #185fa5;
+    --info-fill: #e6f1fb;
+    --info-ink: #042c53;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  html, body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.5;
+    font-size: 15px;
+    min-height: 100vh;
+  }
+  .app-shell {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 24px;
+    min-height: 100vh;
+  }
+  .sidebar {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--line);
+    padding: 20px;
+    height: fit-content;
+    position: sticky;
+    top: 24px;
+  }
+  .logo {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .logo-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--accent); color: white;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; font-size: 16px;
+  }
+  .logo-text { font-weight: 600; font-size: 16px; }
+  .logo-sub { font-size: 11px; color: var(--ink-3); letter-spacing: 0.5px; }
+  .nav-title {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+    color: var(--ink-3); margin: 0 0 10px 8px;
+  }
+  .step-list { list-style: none; margin-bottom: 16px; }
+  .step-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 13px; color: var(--ink-2);
+    margin-bottom: 2px;
+    transition: background 0.15s;
+  }
+  .step-item.active {
+    background: var(--accent-fill);
+    color: var(--accent-ink);
+    font-weight: 500;
+  }
+  .step-item.done { color: var(--ink-2); }
+  .step-num {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--bg); border: 0.5px solid var(--line-2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; flex-shrink: 0;
+  }
+  .step-item.active .step-num {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .step-item.done .step-num {
+    background: var(--accent-fill); color: var(--accent-ink); border-color: var(--accent-fill);
+  }
+  .step-item.done .step-num svg { display: block; }
+  .step-item.done .step-num .num-text { display: none; }
+  .step-num svg { display: none; width: 12px; height: 12px; }
+
+  .stage {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 0.5px solid var(--line);
+    padding: 40px 48px;
+    min-height: 600px;
+    position: relative;
+  }
+  .stage-header {
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .stage-eyebrow {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--accent); font-weight: 500;
+    margin-bottom: 8px;
+  }
+  .stage-title { font-size: 26px; font-weight: 600; margin-bottom: 6px; }
+  .stage-sub { color: var(--ink-2); font-size: 15px; }
+
+  .form-group { margin-bottom: 20px; }
+  .label {
+    display: block; font-size: 13px; font-weight: 500;
+    color: var(--ink-2); margin-bottom: 6px;
+  }
+  .input, .select {
+    width: 100%; padding: 12px 14px;
+    border: 0.5px solid var(--line-2); border-radius: var(--radius);
+    font-size: 15px; font-family: inherit;
+    background: var(--surface);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input:focus, .select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-fill);
+  }
+  .btn {
+    padding: 13px 24px;
+    border: none; border-radius: var(--radius);
+    font-size: 14px; font-weight: 500; font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn svg { width: 14px; height: 14px; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-ink); }
+  .btn-primary:disabled { background: var(--ink-3); cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent; color: var(--ink-2);
+    border: 0.5px solid var(--line-2);
+  }
+  .btn-ghost:hover { background: var(--bg); }
+  .btn-row {
+    display: flex; gap: 12px; margin-top: 28px;
+    padding-top: 20px; border-top: 0.5px solid var(--line);
+  }
+  .btn-row.start { justify-content: flex-start; }
+  .btn-row.between { justify-content: space-between; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 12px; font-weight: 500;
+  }
+  .pill svg { width: 12px; height: 12px; }
+  .pill-success { background: var(--accent-fill); color: var(--accent-ink); }
+  .pill-warn { background: var(--warn-fill); color: var(--warn-ink); }
+  .pill-danger { background: var(--danger-fill); color: var(--danger-ink); }
+  .pill-info { background: var(--info-fill); color: var(--info-ink); }
+
+  .info-card {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .info-card-title {
+    font-size: 12px; font-weight: 500; color: var(--ink-3);
+    text-transform: uppercase; letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .info-card-value { font-size: 20px; font-weight: 600; }
+  .info-card-sub { font-size: 13px; color: var(--ink-2); margin-top: 4px; }
+
+  .camera-frame {
+    width: 280px; height: 280px;
+    margin: 20px auto;
+    border: 2px dashed var(--line-2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--bg);
+  }
+  .camera-frame.scanning {
+    border-color: var(--accent);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  .camera-frame.verified {
+    border-color: var(--accent);
+    background: var(--accent-fill);
+  }
+  @keyframes pulse {
+    0%, 100% { border-color: var(--accent); }
+    50% { border-color: var(--accent-fill); }
+  }
+  .camera-icon svg { width: 80px; height: 80px; color: var(--ink-3); }
+  .camera-frame.verified .camera-icon svg { color: var(--accent); width: 100px; height: 100px; }
+
+  .loader { margin: 28px 0; }
+  .loader-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    font-size: 14px; color: var(--ink-2);
+    opacity: 0.4; transition: opacity 0.3s;
+  }
+  .loader-item.active { opacity: 1; color: var(--ink); }
+  .loader-item.done { opacity: 1; color: var(--ink-2); }
+  .loader-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--bg); border: 1.5px solid var(--line-2);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .loader-dot svg { display: none; width: 10px; height: 10px; color: white; }
+  .loader-item.active .loader-dot {
+    border-color: var(--accent);
+    border-top-color: transparent;
+    animation: spin 0.8s linear infinite;
+  }
+  .loader-item.done .loader-dot {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .loader-item.done .loader-dot svg { display: block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .data-row {
+    display: flex; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 0.5px solid var(--line);
+    font-size: 14px;
+  }
+  .data-label { color: var(--ink-2); }
+  .data-value { font-weight: 500; }
+
+  .bank-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 20px 0; }
+  .bank-card {
+    padding: 20px 16px;
+    border: 0.5px solid var(--line-2);
+    border-radius: var(--radius);
+    text-align: center; cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+  }
+  .bank-card:hover { border-color: var(--accent); background: var(--accent-fill); }
+  .bank-card.selected { border: 2px solid var(--accent); background: var(--accent-fill); }
+  .bank-logo {
+    width: 40px; height: 40px; border-radius: 8px;
+    margin: 0 auto 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600; color: white; font-size: 14px;
+  }
+  .bank-name { font-size: 13px; font-weight: 500; }
+
+  .offer-card {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-ink) 100%);
+    color: white;
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    margin: 20px 0;
+  }
+  .offer-label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+    opacity: 0.8; margin-bottom: 6px;
+  }
+  .offer-amount { font-size: 42px; font-weight: 600; margin-bottom: 16px; }
+  .offer-meta {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 0.5px solid rgba(255,255,255,0.2);
+  }
+  .offer-meta-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.5px; }
+  .offer-meta-value { font-size: 18px; font-weight: 500; margin-top: 2px; }
+
+  .slider-wrap { margin: 20px 0; }
+  input[type="range"] { width: 100%; -webkit-appearance: none; background: transparent; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 6px; background: var(--bg); border-radius: 3px; }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 20px; width: 20px; border-radius: 50%;
+    background: var(--accent);
+    margin-top: -7px;
+    cursor: pointer;
+  }
+  .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--ink-3); margin-top: 6px; }
+
+  .demo-banner {
+    position: fixed; top: 12px; right: 12px;
+    background: var(--ink); color: white;
+    padding: 8px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+    z-index: 100;
+  }
+  .demo-dot { width: 6px; height: 6px; border-radius: 50%; background: #7dd3a1; animation: blink 1.5s infinite; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+  .mode-card {
+    padding: 24px; border: 0.5px solid var(--line-2);
+    border-radius: var(--radius); cursor: pointer;
+    transition: all 0.15s;
+    background: var(--surface);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .mode-card:hover { border-color: var(--accent); background: var(--accent-fill); }
+  .mode-card-icon {
+    width: 40px; height: 40px; border-radius: 8px;
+    background: var(--accent-fill); color: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .mode-card-icon svg { width: 22px; height: 22px; }
+  .mode-card-title { font-weight: 600; margin-bottom: 4px; font-size: 16px; }
+  .mode-card-sub { font-size: 13px; color: var(--ink-2); }
+
+  .queue-result { text-align: center; padding: 30px 0; }
+  .queue-icon {
+    width: 80px; height: 80px; border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .queue-icon svg { width: 40px; height: 40px; }
+  .queue-icon.success { background: var(--accent-fill); color: var(--accent); }
+  .queue-icon.warn { background: var(--warn-fill); color: var(--warn); }
+  .queue-icon.danger { background: var(--danger-fill); color: var(--danger); }
+  .queue-message { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+  .queue-sub { color: var(--ink-2); margin-bottom: 20px; }
+
+  .tx-list {
+    background: var(--bg);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    margin: 16px 0;
+    max-height: 240px; overflow-y: auto;
+  }
+  .tx-item {
+    display: grid; grid-template-columns: 1fr auto;
+    padding: 10px 0; font-size: 13px;
+    border-bottom: 0.5px solid var(--line);
+  }
+  .tx-item:last-child { border: none; }
+  .tx-desc { color: var(--ink); }
+  .tx-date { font-size: 11px; color: var(--ink-3); }
+  .tx-amount { font-weight: 500; text-align: right; }
+  .tx-amount.credit { color: var(--accent); }
+
+  .otp-input-group { display: flex; justify-content: center; gap: 8px; margin: 24px 0; }
+  .otp-digit {
+    width: 48px; height: 56px;
+    text-align: center; font-size: 22px; font-weight: 500;
+    border: 0.5px solid var(--line-2); border-radius: var(--radius);
+  }
+  .otp-digit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-fill); }
+
+  .success-hero { text-align: center; padding: 40px 20px; }
+  .success-circle {
+    width: 120px; height: 120px; border-radius: 50%;
+    background: var(--accent-fill); color: var(--accent);
+    margin: 0 auto 24px;
+    display: flex; align-items: center; justify-content: center;
+    animation: popin 0.4s ease-out;
+  }
+  .success-circle svg { width: 60px; height: 60px; }
+  @keyframes popin { 0% { transform: scale(0); } 70% { transform: scale(1.1); } 100% { transform: scale(1); } }
+  .success-title { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  .success-sub { color: var(--ink-2); font-size: 16px; margin-bottom: 24px; }
+
+  @media (max-width: 900px) {
+    .app-shell { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
+    .stage { padding: 24px; }
+    .bank-grid { grid-template-columns: repeat(2, 1fr); }
+    .data-grid { grid-template-columns: 1fr; }
+    .demo-banner { top: auto; bottom: 12px; }
+  }
+
+  .micro { font-size: 12px; color: var(--ink-3); margin-top: 8px; }
+  .notice {
+    background: var(--info-fill); border-left: 3px solid var(--info);
+    padding: 12px 14px; border-radius: 4px;
+    font-size: 13px; color: var(--info-ink);
+    margin: 14px 0;
+  }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-6h16l1 6"/><path d="M3 9v11a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M3 9h18"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  </defs>
+</svg>
+
+<div class="demo-banner">
+  <span class="demo-dot"></span>
+  <span>Prototype demo</span>
+</div>
+
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">S</div>
+      <div>
+        <div class="logo-text">SwiftCredit</div>
+        <div class="logo-sub">MICRO-LOANS &middot; RSA</div>
+      </div>
+    </div>
+    <p class="nav-title">Application flow</p>
+    <ul class="step-list" id="stepList"></ul>
+    <div style="border-top: 0.5px solid var(--line); padding-top: 14px; margin-top: 6px;">
+      <button class="btn btn-ghost" style="width: 100%; justify-content: center; font-size: 12px; padding: 8px;" onclick="restart()">
+        <svg><use href="#i-refresh"/></svg> Restart demo
+      </button>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage"></main>
+
+</div>
+
+<script>
+const STEPS = [
+  { id: 'mode', label: 'Entry point' },
+  { id: 'prequal', label: 'Pre-qualification' },
+  { id: 'kyc', label: 'Identity (selfie)' },
+  { id: 'bureau', label: 'Credit bureau pull' },
+  { id: 'employer', label: 'Employment confirm' },
+  { id: 'bank-connect', label: 'Bank connection' },
+  { id: 'bank-analysis', label: 'Statement analysis' },
+  { id: 'affordability', label: 'Affordability' },
+  { id: 'offer', label: 'Loan offer' },
+  { id: 'contract', label: 'Digital contract' },
+  { id: 'disbursement', label: 'Payout' },
+];
+
+const state = {
+  currentStep: 0,
+  mode: null,
+  idNumber: '9204155234088',
+  mobile: '082 555 1234',
+  prequalResult: null,
+  selfieVerified: false,
+  employer: { name: 'Sasol Ltd', confirmed: null },
+  bank: null,
+  offer: { amount: 6000, term: 6, instalment: 1180, total: 7080 },
+};
+
+function icon(id, size) {
+  const s = size || 14;
+  return '<svg width="' + s + '" height="' + s + '" style="vertical-align:-2px"><use href="#i-' + id + '"/></svg>';
+}
+
+function renderSidebar() {
+  const list = document.getElementById('stepList');
+  list.innerHTML = STEPS.map((s, i) => {
+    const cls = i === state.currentStep ? 'active' : i < state.currentStep ? 'done' : '';
+    return '<li class="step-item ' + cls + '">' +
+           '<span class="step-num"><span class="num-text">' + (i + 1) + '</span>' +
+           '<svg><use href="#i-check"/></svg></span>' +
+           '<span>' + s.label + '</span></li>';
+  }).join('');
+}
+
+function goTo(stepId) {
+  const idx = STEPS.findIndex(s => s.id === stepId);
+  if (idx >= 0) state.currentStep = idx;
+  render();
+}
+function next() {
+  state.currentStep = Math.min(state.currentStep + 1, STEPS.length - 1);
+  render();
+}
+function restart() {
+  state.currentStep = 0;
+  state.mode = null;
+  state.prequalResult = null;
+  state.selfieVerified = false;
+  state.employer.confirmed = null;
+  state.bank = null;
+  render();
+}
+
+function render() {
+  renderSidebar();
+  const stage = document.getElementById('stage');
+  const current = STEPS[state.currentStep];
+  stage.innerHTML = (screens[current.id] || (() => '<div>Screen coming soon</div>'))();
+  if (afterRender[current.id]) afterRender[current.id]();
+}
+
+const screens = {};
+const afterRender = {};
+
+screens.mode = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 1 of 11 &middot; Entry point</div>
+    <h1 class="stage-title">Apply for a micro-loan in under 5 minutes</h1>
+    <p class="stage-sub">No paperwork. No queues. Automated from ID to payout.</p>
+  </div>
+  <p style="margin-bottom: 8px;">How are you applying today?</p>
+  <div class="mode-selector">
+    <div class="mode-card" onclick="state.mode='online'; next()">
+      <div class="mode-card-icon"><svg><use href="#i-phone"/></svg></div>
+      <div>
+        <div class="mode-card-title">Online / App</div>
+        <div class="mode-card-sub">Full application. Funds in your account within minutes.</div>
+      </div>
+    </div>
+    <div class="mode-card" onclick="state.mode='queue'; next()">
+      <div class="mode-card-icon"><svg><use href="#i-store"/></svg></div>
+      <div>
+        <div class="mode-card-title">In-branch queue</div>
+        <div class="mode-card-sub">Quick pre-screen before you queue inside. Scan a QR code.</div>
+      </div>
+    </div>
+  </div>
+  <div class="notice">
+    <strong>For the business demo:</strong> Both flows share the same backend scoring engine. The in-branch mode is a lightweight read-only check &mdash; no hard bureau pull, no affordability engine, just a soft score to advise the customer before they queue.
+  </div>
+`;
+
+screens.prequal = () => {
+  const isQueue = state.mode === 'queue';
+  return `
+    <div class="stage-header">
+      <div class="stage-eyebrow">Step 2 of 11 &middot; ${isQueue ? 'Queue pre-screen' : 'Pre-qualification'}</div>
+      <h1 class="stage-title">${isQueue ? 'Should you queue today?' : "Let's see if you qualify"}</h1>
+      <p class="stage-sub">Soft bureau check &mdash; no impact on your credit score.</p>
+    </div>
+    <div class="form-group">
+      <label class="label">South African ID number</label>
+      <input class="input" id="idInput" value="${state.idNumber}" maxlength="13">
+    </div>
+    <div class="form-group">
+      <label class="label">Mobile number</label>
+      <input class="input" id="mobInput" value="${state.mobile}">
+    </div>
+    <div id="prequalLoader" class="hidden">
+      <div class="loader">
+        <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Querying credit bureau (soft pull)</div>
+        <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Estimating affordability band</div>
+        <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Calculating likelihood score</div>
+      </div>
+    </div>
+    <div id="prequalResult" class="hidden"></div>
+    <div class="btn-row start" id="prequalActions">
+      <button class="btn btn-primary" onclick="runPrequal()">Run soft check ${icon('arrow-right')}</button>
+    </div>
+    <p class="micro">Soft credit checks via XDS. Compliant with National Credit Act &sect;81 and POPIA.</p>
+  `;
+};
+window.runPrequal = function() {
+  document.getElementById('prequalLoader').classList.remove('hidden');
+  document.getElementById('prequalActions').classList.add('hidden');
+  runLoader('#prequalLoader', showPrequalResult);
+};
+function showPrequalResult() {
+  state.prequalResult = 'green';
+  const isQueue = state.mode === 'queue';
+  const el = document.getElementById('prequalResult');
+  el.classList.remove('hidden');
+  el.innerHTML =
+    '<div class="queue-result">' +
+      '<div class="queue-icon success"><svg><use href="#i-check"/></svg></div>' +
+      '<div class="queue-message">You likely qualify</div>' +
+      '<div class="queue-sub">Estimated credit score <strong>684</strong> &middot; affordability band <strong>R5,000 &ndash; R8,000</strong></div>' +
+      '<span class="pill pill-success">' + icon('check', 12) + ' GREEN &middot; proceed</span>' +
+    '</div>';
+  document.getElementById('prequalActions').classList.remove('hidden');
+  document.getElementById('prequalActions').innerHTML = isQueue
+    ? '<button class="btn btn-primary" onclick="goTo(\'mode\')">Done &mdash; join the queue inside</button>' +
+      '<button class="btn btn-ghost" onclick="state.mode=\'online\'; next()">Or continue online now ' + icon('arrow-right') + '</button>'
+    : '<button class="btn btn-primary" onclick="next()">Continue application ' + icon('arrow-right') + '</button>';
+}
+
+screens.kyc = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 3 of 11 &middot; Identity verification</div>
+    <h1 class="stage-title">Take a quick selfie</h1>
+    <p class="stage-sub">We match your face to Department of Home Affairs records. 30 seconds.</p>
+  </div>
+  <div id="cameraBox" class="camera-frame">
+    <div class="camera-icon" id="cameraIcon"><svg><use href="#i-camera"/></svg></div>
+  </div>
+  <div id="kycStatus" style="text-align: center; color: var(--ink-2); min-height: 24px;">
+    Position your face in the circle and hold still.
+  </div>
+  <div id="kycLoader" class="loader hidden">
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Liveness detection</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Matching to Home Affairs (DHA)</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Running fraud signals</div>
+  </div>
+  <div class="btn-row between" id="kycActions">
+    <button class="btn btn-ghost" onclick="goTo('prequal')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" onclick="runSelfie()">Start selfie scan</button>
+  </div>
+`;
+window.runSelfie = function() {
+  const box = document.getElementById('cameraBox');
+  const icn = document.getElementById('cameraIcon');
+  const status = document.getElementById('kycStatus');
+  box.classList.add('scanning');
+  icn.innerHTML = '<svg><use href="#i-user"/></svg>';
+  status.textContent = 'Scanning your face...';
+  document.getElementById('kycActions').classList.add('hidden');
+
+  setTimeout(() => {
+    document.getElementById('kycLoader').classList.remove('hidden');
+    runLoader('#kycLoader', () => {
+      state.selfieVerified = true;
+      box.classList.remove('scanning');
+      box.classList.add('verified');
+      icn.innerHTML = '<svg><use href="#i-check"/></svg>';
+      status.innerHTML = '<span class="pill pill-success">' + icon('check', 12) + ' Identity verified &middot; fraud score 0.03</span>';
+      document.getElementById('kycActions').classList.remove('hidden');
+      document.getElementById('kycActions').innerHTML =
+        '<button class="btn btn-ghost" onclick="goTo(\'prequal\')">' + icon('arrow-left') + ' Back</button>' +
+        '<button class="btn btn-primary" onclick="next()">Continue ' + icon('arrow-right') + '</button>';
+    });
+  }, 1500);
+};
+
+screens.bureau = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 4 of 11 &middot; Credit bureau</div>
+    <h1 class="stage-title">Pulling your credit profile</h1>
+    <p class="stage-sub">We fetch your bureau data so you don't have to fill it in.</p>
+  </div>
+  <div id="bureauLoader" class="loader">
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>XDS &mdash; credit score & trade lines</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>XDS &mdash; AI Analytics Models</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>XDS &mdash; Fraud Management AI Platform</div>
+  </div>
+  <div id="bureauResult" class="hidden">
+    <div class="info-card" style="background: var(--accent-fill);">
+      <div class="info-card-title">Credit score</div>
+      <div class="info-card-value" style="color: var(--accent-ink);">684 <span style="font-size: 14px; font-weight: 400;">/ 999</span></div>
+      <div class="info-card-sub" style="color: var(--accent-ink);">Above average &mdash; category 3 (acceptable risk)</div>
+    </div>
+    <div class="data-grid">
+      <div class="info-card"><div class="info-card-title">Active trade lines</div><div class="info-card-value">4</div><div class="info-card-sub">2 revolving &middot; 2 instalment</div></div>
+      <div class="info-card"><div class="info-card-title">Months since last default</div><div class="info-card-value">28</div><div class="info-card-sub">No recent adverse events</div></div>
+      <div class="info-card"><div class="info-card-title">Credit enquiries (6m)</div><div class="info-card-value">2</div><div class="info-card-sub">Normal activity</div></div>
+      <div class="info-card"><div class="info-card-title">Debt-to-income (bureau)</div><div class="info-card-value">31%</div><div class="info-card-sub">Within acceptable band</div></div>
+    </div>
+  </div>
+  <div class="btn-row between hidden" id="bureauActions">
+    <button class="btn btn-ghost" onclick="goTo('kyc')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" onclick="next()">Continue ${icon('arrow-right')}</button>
+  </div>
+`;
+afterRender.bureau = function() {
+  runLoader('#bureauLoader', () => {
+    document.getElementById('bureauResult').classList.remove('hidden');
+    document.getElementById('bureauActions').classList.remove('hidden');
+  }, 650);
+};
+
+screens.employer = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 5 of 11 &middot; Employment</div>
+    <h1 class="stage-title">Confirm your employer</h1>
+    <p class="stage-sub">We found this on your bureau record.</p>
+  </div>
+  <div class="info-card" style="background: var(--accent-fill); padding: 24px;">
+    <div class="info-card-title">Employer on file</div>
+    <div class="info-card-value" style="color: var(--accent-ink); font-size: 24px;">${state.employer.name}</div>
+    <div class="info-card-sub" style="color: var(--accent-ink);">Payroll-confirmed &middot; tenure 4 yr 2 mo</div>
+  </div>
+  <div id="empEditBox" class="hidden form-group">
+    <label class="label">Current employer</label>
+    <input class="input" id="empEditInput" value="${state.employer.name}">
+    <p class="micro" style="color: var(--warn);">${icon('alert')} Changing this flags the application for manual risk review (adds ~2 min).</p>
+  </div>
+  <div class="btn-row between">
+    <button class="btn btn-ghost" onclick="toggleEmpEdit()">${icon('edit')} Not correct?</button>
+    <div>
+      <button class="btn btn-ghost" onclick="goTo('bureau')">${icon('arrow-left')} Back</button>
+      <button class="btn btn-primary" onclick="state.employer.confirmed = true; next()">${icon('check')} Correct &mdash; continue</button>
+    </div>
+  </div>
+`;
+window.toggleEmpEdit = function() {
+  document.getElementById('empEditBox').classList.toggle('hidden');
+};
+
+screens['bank-connect'] = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 6 of 11 &middot; Bank connection</div>
+    <h1 class="stage-title">Connect your bank account</h1>
+    <p class="stage-sub">No PDF uploads. We fetch your last 3 months via secure open-banking (Finch / Truid).</p>
+  </div>
+  <p class="label">Which bank is your salary paid into?</p>
+  <div class="bank-grid">
+    ${['Capitec', 'Standard Bank', 'FNB', 'Absa', 'Nedbank', 'TymeBank'].map((b, i) => {
+      const colors = ['#ED1C24', '#0033A0', '#00A9CE', '#EE3124', '#006341', '#d4a017'];
+      return '<div class="bank-card" onclick="selectBank(\'' + b + '\', this)">' +
+             '<div class="bank-logo" style="background: ' + colors[i] + ';">' + b[0] + '</div>' +
+             '<div class="bank-name">' + b + '</div></div>';
+    }).join('')}
+  </div>
+  <div id="consentFlow" class="hidden">
+    <div class="notice">
+      ${icon('phone')} We've sent a consent SMS to <strong>${state.mobile}</strong>. Approve it in your banking app to continue. This is a <strong>read-only</strong> connection &mdash; we cannot move money.
+    </div>
+    <div class="loader" id="consentLoader">
+      <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>SMS consent sent</div>
+      <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Awaiting bank authentication</div>
+      <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Retrieving 3 months of statements</div>
+    </div>
+  </div>
+  <div class="btn-row between">
+    <button class="btn btn-ghost" onclick="goTo('employer')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" id="bankContinue" disabled onclick="next()">Continue ${icon('arrow-right')}</button>
+  </div>
+`;
+window.selectBank = function(name, card) {
+  document.querySelectorAll('.bank-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  state.bank = name;
+  document.getElementById('consentFlow').classList.remove('hidden');
+  runLoader('#consentLoader', () => {
+    document.getElementById('bankContinue').disabled = false;
+  }, 900);
+};
+
+screens['bank-analysis'] = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 7 of 11 &middot; Statement analysis</div>
+    <h1 class="stage-title">Analysing your transactions</h1>
+    <p class="stage-sub">OCR + rules engine extracts income, expenses and risk signals in seconds.</p>
+  </div>
+  <div id="analysisLoader" class="loader">
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Parsing 312 transactions</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Detecting salary deposits</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Categorising expenses</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Running risk flag rules</div>
+  </div>
+  <div id="analysisResult" class="hidden">
+    <div class="data-grid">
+      <div class="info-card">
+        <div class="info-card-title">Net monthly income</div>
+        <div class="info-card-value" style="color: var(--accent-ink);">R 18,450</div>
+        <div class="info-card-sub">Salary detected from <strong>${state.employer.name}</strong> &middot; consistent for 12+ months</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-title">Total monthly expenses</div>
+        <div class="info-card-value">R 11,200</div>
+        <div class="info-card-sub">Rent, groceries, transport, debit orders</div>
+      </div>
+    </div>
+    <p style="font-size: 13px; color: var(--ink-2); margin: 16px 0 6px;">Detected signals</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+      <span class="pill pill-success">${icon('check', 12)} Salary regular (monthly)</span>
+      <span class="pill pill-success">${icon('check', 12)} No unpaid debit orders</span>
+      <span class="pill pill-success">${icon('check', 12)} No gambling activity</span>
+      <span class="pill pill-warn">${icon('alert', 12)} 1 month of overdraft use (April)</span>
+    </div>
+    <p style="font-size: 13px; color: var(--ink-2); margin: 20px 0 6px;">Recent salary deposits</p>
+    <div class="tx-list">
+      <div class="tx-item"><div><div class="tx-desc">SALARY SASOL LTD PAYROLL</div><div class="tx-date">29 Mar 2026</div></div><div class="tx-amount credit">+ R 18,450</div></div>
+      <div class="tx-item"><div><div class="tx-desc">SALARY SASOL LTD PAYROLL</div><div class="tx-date">28 Feb 2026</div></div><div class="tx-amount credit">+ R 18,450</div></div>
+      <div class="tx-item"><div><div class="tx-desc">SALARY SASOL LTD PAYROLL</div><div class="tx-date">31 Jan 2026</div></div><div class="tx-amount credit">+ R 18,200</div></div>
+    </div>
+  </div>
+  <div class="btn-row between hidden" id="analysisActions">
+    <button class="btn btn-ghost" onclick="goTo('bank-connect')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" onclick="next()">Continue ${icon('arrow-right')}</button>
+  </div>
+`;
+afterRender['bank-analysis'] = function() {
+  runLoader('#analysisLoader', () => {
+    document.getElementById('analysisResult').classList.remove('hidden');
+    document.getElementById('analysisActions').classList.remove('hidden');
+  }, 650);
+};
+
+screens.affordability = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 8 of 11 &middot; Affordability</div>
+    <h1 class="stage-title">Here's what we calculated</h1>
+    <p class="stage-sub">Based on your bureau + bank data. Review and confirm.</p>
+  </div>
+  <div class="data-grid">
+    <div class="info-card" style="background: var(--accent-fill);">
+      <div class="info-card-title">Monthly income</div>
+      <div class="info-card-value" style="color: var(--accent-ink);">R 18,450</div>
+      <div class="info-card-sub" style="color: var(--accent-ink);">From bank statement analysis</div>
+    </div>
+    <div class="info-card">
+      <div class="info-card-title">Total monthly expenses</div>
+      <div class="info-card-value">R 11,200</div>
+      <div class="info-card-sub">Including all debit orders & NCA mandatory minimums</div>
+    </div>
+  </div>
+  <div class="info-card" style="background: var(--accent); color: white; padding: 24px; text-align: center;">
+    <div class="info-card-title" style="color: rgba(255,255,255,0.8);">Available for credit (disposable)</div>
+    <div class="info-card-value" style="color: white; font-size: 32px;">R 7,250 / month</div>
+    <div class="info-card-sub" style="color: rgba(255,255,255,0.85);">Maximum instalment we can responsibly offer you</div>
+  </div>
+  <div class="notice">
+    This calculation follows NCR Regulation 23A affordability rules. If you think our expense figure is too high, you can dispute specific line items &mdash; but note that unusual adjustments may require a manual review.
+  </div>
+  <div class="btn-row between">
+    <button class="btn btn-ghost" onclick="goTo('bank-analysis')">${icon('arrow-left')} Back</button>
+    <div>
+      <button class="btn btn-ghost" onclick="alert('Expense dispute flow - shown to stakeholders as a modal')">${icon('edit')} Dispute expenses</button>
+      <button class="btn btn-primary" onclick="next()">${icon('check')} Looks right &mdash; continue</button>
+    </div>
+  </div>
+`;
+
+screens.offer = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 9 of 11 &middot; Your personalised offer</div>
+    <h1 class="stage-title">You're approved</h1>
+    <p class="stage-sub">Adjust the amount and term to suit you. Your instalment updates live.</p>
+  </div>
+  <div class="offer-card">
+    <div class="offer-label">Approved for up to</div>
+    <div class="offer-amount">R <span id="offerMax">12,000</span></div>
+    <div class="offer-meta">
+      <div><div class="offer-meta-label">You'd like</div><div class="offer-meta-value">R <span id="offerAmt">6,000</span></div></div>
+      <div><div class="offer-meta-label">Over</div><div class="offer-meta-value"><span id="offerTerm">6</span> months</div></div>
+      <div><div class="offer-meta-label">Monthly instalment</div><div class="offer-meta-value">R <span id="offerInst">1,180</span></div></div>
+    </div>
+  </div>
+  <div class="slider-wrap">
+    <label class="label">Loan amount</label>
+    <input type="range" id="amtSlider" min="1000" max="12000" step="500" value="${state.offer.amount}" oninput="updateOffer()">
+    <div class="slider-labels"><span>R 1,000</span><span>R 12,000</span></div>
+  </div>
+  <div class="slider-wrap">
+    <label class="label">Repayment term</label>
+    <input type="range" id="termSlider" min="1" max="12" step="1" value="${state.offer.term}" oninput="updateOffer()">
+    <div class="slider-labels"><span>1 month</span><span>12 months</span></div>
+  </div>
+  <div class="data-grid">
+    <div class="info-card"><div class="info-card-title">Interest rate</div><div class="info-card-value" style="font-size: 18px;">5% / month</div><div class="info-card-sub">NCA compliant &middot; capped at prescribed rate</div></div>
+    <div class="info-card"><div class="info-card-title">Total repayment</div><div class="info-card-value" style="font-size: 18px;">R <span id="offerTotal">7,080</span></div><div class="info-card-sub">Includes initiation fee R 165 + service fee</div></div>
+  </div>
+  <div class="btn-row between">
+    <button class="btn btn-ghost" onclick="goTo('affordability')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" onclick="next()">Accept offer ${icon('arrow-right')}</button>
+  </div>
+`;
+window.updateOffer = function() {
+  const amt = parseInt(document.getElementById('amtSlider').value);
+  const term = parseInt(document.getElementById('termSlider').value);
+  const rate = 0.05;
+  const fees = 165 + (term * 60);
+  const total = Math.round(amt * (1 + rate * term) + fees);
+  const inst = Math.round(total / term);
+  state.offer = { amount: amt, term, instalment: inst, total };
+  document.getElementById('offerAmt').textContent = amt.toLocaleString();
+  document.getElementById('offerTerm').textContent = term;
+  document.getElementById('offerInst').textContent = inst.toLocaleString();
+  document.getElementById('offerTotal').textContent = total.toLocaleString();
+};
+
+screens.contract = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 10 of 11 &middot; Digital contract</div>
+    <h1 class="stage-title">Review and sign</h1>
+    <p class="stage-sub">Read the key terms, then verify with an SMS OTP.</p>
+  </div>
+  <div class="info-card" style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 0.5px solid var(--line);">
+      <div><strong>Loan agreement</strong> &middot; NCA-compliant</div>
+      <span class="pill pill-info">Draft ready</span>
+    </div>
+    <div class="data-row"><span class="data-label">Principal amount</span><span class="data-value">R ${state.offer.amount.toLocaleString()}</span></div>
+    <div class="data-row"><span class="data-label">Term</span><span class="data-value">${state.offer.term} months</span></div>
+    <div class="data-row"><span class="data-label">Monthly instalment</span><span class="data-value">R ${state.offer.instalment.toLocaleString()}</span></div>
+    <div class="data-row"><span class="data-label">Total repayable</span><span class="data-value">R ${state.offer.total.toLocaleString()}</span></div>
+    <div class="data-row"><span class="data-label">First debit order</span><span class="data-value">25 May 2026</span></div>
+    <div class="data-row"><span class="data-label">Annual interest rate</span><span class="data-value">60% APR</span></div>
+  </div>
+  <div style="margin: 20px 0;">
+    <label style="display: flex; gap: 10px; align-items: flex-start; cursor: pointer;">
+      <input type="checkbox" id="agreeBox" style="margin-top: 4px;" onchange="toggleOtp()">
+      <span style="font-size: 13px; color: var(--ink-2);">I confirm I've read the pre-agreement statement, quotation, and full T&Cs. I consent to a debit order on the date above. I understand the total cost of credit.</span>
+    </label>
+  </div>
+  <div id="otpSection" class="hidden">
+    <p class="label">Enter the 6-digit OTP sent to ${state.mobile}</p>
+    <div class="otp-input-group">
+      ${[0,1,2,3,4,5].map(i => '<input class="otp-digit" maxlength="1" data-i="' + i + '" oninput="otpMove(this, ' + i + ')">').join('')}
+    </div>
+    <p class="micro" style="text-align: center;">Demo: type any 6 digits</p>
+  </div>
+  <div class="btn-row between">
+    <button class="btn btn-ghost" onclick="goTo('offer')">${icon('arrow-left')} Back</button>
+    <button class="btn btn-primary" id="signBtn" disabled onclick="next()">Sign & submit ${icon('arrow-right')}</button>
+  </div>
+`;
+window.toggleOtp = function() {
+  const on = document.getElementById('agreeBox').checked;
+  document.getElementById('otpSection').classList.toggle('hidden', !on);
+  if (on) setTimeout(() => document.querySelector('.otp-digit').focus(), 100);
+};
+window.otpMove = function(el, i) {
+  if (el.value && i < 5) {
+    document.querySelector('[data-i="' + (i + 1) + '"]').focus();
+  }
+  const filled = Array.from(document.querySelectorAll('.otp-digit')).every(x => x.value);
+  document.getElementById('signBtn').disabled = !filled;
+};
+
+screens.disbursement = () => `
+  <div class="stage-header">
+    <div class="stage-eyebrow">Step 11 of 11 &middot; Payout</div>
+    <h1 class="stage-title">Paying out now</h1>
+    <p class="stage-sub">Real-time clearing via PayShap. Funds arrive within 60 seconds.</p>
+  </div>
+  <div id="payoutLoader" class="loader">
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Digital signature committed to contract ledger</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>NCR registration created</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Instant payout via PayShap RPP</div>
+    <div class="loader-item"><div class="loader-dot"><svg><use href="#i-check"/></svg></div>Funds confirmed in your ${state.bank || 'Capitec'} account</div>
+  </div>
+  <div id="payoutDone" class="hidden">
+    <div class="success-hero">
+      <div class="success-circle"><svg><use href="#i-check"/></svg></div>
+      <div class="success-title">R ${state.offer.amount.toLocaleString()} is in your account</div>
+      <div class="success-sub">Total time from ID entry to payout: <strong>4 min 22 sec</strong></div>
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px;">
+        <span class="pill pill-success">Loan reference: SC-2026-084512</span>
+        <span class="pill pill-info">Paid to ${state.bank || 'Capitec'} &middot;&middot;&middot;4429</span>
+      </div>
+    </div>
+    <div class="notice" style="margin-top: 30px;">
+      <strong>What the business sees:</strong> Zero documents collected. Zero staff hours. Full NCA/POPIA audit trail captured. Customer onboarded, scored, contracted and funded in under 5 minutes &mdash; with every step auditable.
+    </div>
+    <div class="btn-row start">
+      <button class="btn btn-primary" onclick="restart()">${icon('refresh')} Run demo again</button>
+    </div>
+  </div>
+`;
+afterRender.disbursement = function() {
+  runLoader('#payoutLoader', () => {
+    document.getElementById('payoutDone').classList.remove('hidden');
+  }, 800);
+};
+
+function runLoader(selector, onDone, delay) {
+  delay = delay || 700;
+  const items = document.querySelectorAll(selector + ' .loader-item');
+  if (!items.length) { if (onDone) onDone(); return; }
+  let i = 0;
+  const tick = () => {
+    if (i > 0) items[i - 1].classList.replace('active', 'done');
+    if (i < items.length) {
+      items[i].classList.add('active');
+      i++;
+      setTimeout(tick, delay);
+    } else {
+      if (onDone) onDone();
+    }
+  };
+  items[0].classList.add('active');
+  i = 1;
+  setTimeout(tick, delay);
+}
+
+render();
+</script>
+</body>
+</html>
